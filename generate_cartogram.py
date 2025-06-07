@@ -34,6 +34,30 @@ def load_states(topojson_path: str) -> gpd.GeoDataFrame:
     return gpd.GeoDataFrame.from_features(features)
 
 
+def generate_cartogram_df(
+    topojson_path: str, csv_path: str, iterations: int = 5
+) -> gpd.GeoDataFrame:
+    """Return a cartogram GeoDataFrame for the given data."""
+    states = load_states(topojson_path)
+    data = pd.read_csv(csv_path)
+    if "id" not in data.columns or "value" not in data.columns:
+        raise ValueError("CSV file must contain 'id' and 'value' columns")
+    data["id"] = data["id"].astype(int)
+
+    merged = states.merge(data, on="id", how="left")
+    if merged["value"].isna().any():
+        missing = merged[merged["value"].isna()]["id"].tolist()
+        raise ValueError(f"Missing value for state ids: {missing}")
+
+    carto = cg.Cartogram(
+        merged,
+        "value",
+        max_iterations=iterations,
+        verbose=False,
+    )
+    return carto
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate contiguous cartogram")
     parser.add_argument("topojson", help="Input TopoJSON file with state shapes")
