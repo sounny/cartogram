@@ -6,7 +6,7 @@ utility script to generate contiguous cartograms from arbitrary state data.
 ## Requirements
 
 ```
-pip install cartogram geopandas topojson pandas
+pip install -r requirements.txt
 ```
 
 ## Usage
@@ -29,3 +29,14 @@ python3 generate_cartogram.py us.json data.csv -o output.geojson
 
 The resulting `output.geojson` contains transformed geometries which can be
 visualized with standard GIS tools.
+
+## Web Application
+
+Run a small Flask server to generate cartograms directly in the browser:
+
+```
+python3 app.py
+```
+
+Navigate to `http://localhost:5000` and upload a CSV file with `id` and `value`
+columns to see the resulting cartogram rendered with D3.
