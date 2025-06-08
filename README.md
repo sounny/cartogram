@@ -21,6 +21,9 @@ id,value
 ...
 ```
 
+A small `template.csv` file is provided as an example. Use it as a starting
+point for your own data or download it directly from the web interface.
+
 Run the script to produce a GeoJSON cartogram:
 
 ```
@@ -40,3 +43,7 @@ python3 app.py
 
 Navigate to `http://localhost:5000` and upload a CSV file with `id` and `value`
 columns to see the resulting cartogram rendered with D3.
+
+The web page now provides a simple navigation menu. You can download the
+`template.csv` directly from there, add short informational notes, and export
+the rendered cartogram as a PNG image.
