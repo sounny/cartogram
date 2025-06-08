@@ -2,18 +2,33 @@
 <meta charset="utf-8">
 <title>Cartogram Generator</title>
 <style>
-body { font-family: sans-serif; }
+body { font-family: sans-serif; margin: 0; }
+nav { background: #333; color: #fff; padding: 0.5em; }
+nav ul { list-style: none; margin: 0; padding: 0; display: flex; }
+nav li { margin-right: 1em; }
+nav a { color: #fff; text-decoration: none; }
 #controls { margin: 1em 0; }
 .land { fill: #eee; stroke: #999; }
 .state { fill: steelblue; stroke: #fff; }
 </style>
+<nav>
+  <ul>
+    <li><a href="#" id="nav-home">Home</a></li>
+    <li><a href="template.csv" download>Template CSV</a></li>
+    <li><a href="#" id="download-png">Download PNG</a></li>
+  </ul>
+</nav>
 <div id="controls">
   <input type="file" id="csv" accept=".csv" />
   <button id="generate">Generate Cartogram</button>
+  <input type="text" id="info-input" placeholder="Additional info" />
+  <button id="add-info">Add Info</button>
 </div>
 <svg width="960" height="600"></svg>
+<div id="info-area"></div>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://unpkg.com/topojson-client@3"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/save-svg-as-png/1.4.17/saveSvgAsPng.min.js"></script>
 <script>
 const svg = d3.select("svg");
 const path = d3.geoPath().projection(d3.geoAlbersUsa().scale(1000).translate([480,300]));
@@ -46,5 +61,19 @@ document.getElementById('generate').addEventListener('click', () => {
         .attr('d', path);
     })
     .catch(err => alert(err));
+});
+
+document.getElementById('download-png').addEventListener('click', () => {
+  saveSvgAsPng(document.querySelector('svg'), 'cartogram.png');
+});
+
+document.getElementById('add-info').addEventListener('click', () => {
+  const text = document.getElementById('info-input').value.trim();
+  if (text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    document.getElementById('info-area').appendChild(div);
+    document.getElementById('info-input').value = '';
+  }
 });
 </script>
