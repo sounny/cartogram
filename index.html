@@ -10,6 +10,7 @@ nav a { color: #fff; text-decoration: none; }
 #controls { margin: 1em 0; }
 .land { fill: #eee; stroke: #999; }
 .state { fill: steelblue; stroke: #fff; }
+.tooltip { position: absolute; background: rgba(0,0,0,0.75); color: #fff; padding: 0.2em 0.5em; pointer-events: none; display: none; }
 </style>
 <nav>
   <ul>
@@ -20,11 +21,13 @@ nav a { color: #fff; text-decoration: none; }
 </nav>
 <div id="controls">
   <input type="file" id="csv" accept=".csv" />
+  <select id="preset-select"></select>
   <button id="generate">Generate Cartogram</button>
   <input type="text" id="info-input" placeholder="Additional info" />
   <button id="add-info">Add Info</button>
 </div>
 <svg width="960" height="600"></svg>
+<div id="tooltip" class="tooltip"></div>
 <div id="info-area"></div>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://unpkg.com/topojson-client@3"></script>
@@ -33,16 +36,37 @@ nav a { color: #fff; text-decoration: none; }
 const svg = d3.select("svg");
 const path = d3.geoPath().projection(d3.geoAlbersUsa().scale(1000).translate([480,300]));
 let baseStates;
+let stateNames = {};
+let presets = {};
+let currentValues = {};
+const tooltip = d3.select('#tooltip');
 
-d3.json("us.json").then(us => {
+Promise.all([
+  d3.json('us.json'),
+  d3.json('state_names.json'),
+  d3.json('presets.json')
+]).then(([us, names, presetData]) => {
+  stateNames = names;
+  presets = presetData;
   baseStates = topojson.feature(us, us.objects.states).features;
-  svg.append("g").attr("id","states")
-     .selectAll("path")
-     .data(baseStates)
-     .enter().append("path")
-     .attr("class","state")
-     .attr("d", path);
+  const stateGroup = svg.append('g').attr('id','states')
+    .selectAll('path')
+    .data(baseStates)
+    .enter().append('path')
+    .attr('class','state')
+    .attr('d', path)
+    .on('click', (event,d) => showTooltip(event,d));
+
+  const select = document.getElementById('preset-select');
+  select.innerHTML = '<option value="">Preset</option>';
+  Object.keys(presets).forEach(key => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = key.charAt(0).toUpperCase()+key.slice(1);
+    select.appendChild(opt);
+  });
 });
+
 
 document.getElementById('generate').addEventListener('click', () => {
   const file = document.getElementById('csv').files[0];
@@ -59,9 +83,43 @@ document.getElementById('generate').addEventListener('click', () => {
         .data(geojson.features, d => d.properties.id)
         .transition().duration(750)
         .attr('d', path);
+      geojson.features.forEach(f => currentValues[f.properties.id] = f.properties.value);
     })
     .catch(err => alert(err));
 });
+
+document.getElementById('preset-select').addEventListener('change', ev => {
+  const key = ev.target.value;
+  if (!key || !presets[key]) return;
+  const rows = ['id,value'];
+  Object.entries(presets[key]).forEach(([id,val]) => {
+    rows.push(id + ',' + val);
+  });
+  const blob = new Blob([rows.join('\n')], {type: 'text/csv'});
+  const formData = new FormData();
+  formData.append('file', blob, 'preset.csv');
+  fetch('/cartogram', { method: 'POST', body: formData })
+    .then(r => { if(!r.ok) throw new Error('Error generating cartogram'); return r.json(); })
+    .then(geojson => {
+      svg.select('#states').selectAll('path')
+        .data(geojson.features, d => d.properties.id)
+        .transition().duration(750)
+        .attr('d', path);
+      geojson.features.forEach(f => currentValues[f.properties.id] = f.properties.value);
+    })
+    .catch(err => alert(err));
+});
+
+function showTooltip(event, d) {
+  const value = currentValues[d.id] ?? 'N/A';
+  const name = stateNames[d.id] || d.id;
+  tooltip.style('left', (event.pageX + 5) + 'px')
+         .style('top', (event.pageY + 5) + 'px')
+         .style('display', 'block')
+         .text(`${name}: ${value}`);
+}
+
+svg.on('click', () => tooltip.style('display','none'));
 
 document.getElementById('download-png').addEventListener('click', () => {
   saveSvgAsPng(document.querySelector('svg'), 'cartogram.png');

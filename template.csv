@@ -1,6 +1,54 @@
-id,value
-1,100
-2,80
-4,60
-5,70
-6,90
+id,name,value
+1,Alabama,100
+2,Alaska,100
+4,Arizona,100
+5,Arkansas,100
+6,California,100
+8,Colorado,100
+9,Connecticut,100
+10,Delaware,100
+11,District of Columbia,100
+12,Florida,100
+13,Georgia,100
+15,Hawaii,100
+16,Idaho,100
+17,Illinois,100
+18,Indiana,100
+19,Iowa,100
+20,Kansas,100
+21,Kentucky,100
+22,Louisiana,100
+23,Maine,100
+24,Maryland,100
+25,Massachusetts,100
+26,Michigan,100
+27,Minnesota,100
+28,Mississippi,100
+29,Missouri,100
+30,Montana,100
+31,Nebraska,100
+32,Nevada,100
+33,New Hampshire,100
+34,New Jersey,100
+35,New Mexico,100
+36,New York,100
+37,North Carolina,100
+38,North Dakota,100
+39,Ohio,100
+40,Oklahoma,100
+41,Oregon,100
+42,Pennsylvania,100
+44,Rhode Island,100
+45,South Carolina,100
+46,South Dakota,100
+47,Tennessee,100
+48,Texas,100
+49,Utah,100
+50,Vermont,100
+51,Virginia,100
+53,Washington,100
+54,West Virginia,100
+55,Wisconsin,100
+56,Wyoming,100
+72,Puerto Rico,100
+78,U.S. Virgin Islands,100
