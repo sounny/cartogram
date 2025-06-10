@@ -21,8 +21,9 @@ id,value
 ...
 ```
 
-A small `template.csv` file is provided as an example. Use it as a starting
-point for your own data or download it directly from the web interface.
+A small `template.csv` file is provided as an example. Each row now includes the
+state name so you can easily edit the values. Use it as a starting point for
+your own data or download it directly from the web interface.
 
 Run the script to produce a GeoJSON cartogram:
 
@@ -46,4 +47,7 @@ columns to see the resulting cartogram rendered with D3.
 
 The web page now provides a simple navigation menu. You can download the
 `template.csv` directly from there, add short informational notes, and export
-the rendered cartogram as a PNG image.
+the rendered cartogram as a PNG image.  A preset drop-down lets you quickly
+generate cartograms for built in datasets such as population, land area and a
+synthetic GDP metric.  Clicking on a state displays a small popup with the
+state name and its current value.
