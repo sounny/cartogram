@@ -23,6 +23,10 @@ nav a { color: #fff; text-decoration: none; }
   <input type="file" id="csv" accept=".csv" />
   <select id="preset-select"></select>
   <button id="generate">Generate Cartogram</button>
+  <label>
+    Iterations:
+    <input type="number" id="iterations" value="5" min="1" max="25" step="1" />
+  </label>
   <input type="text" id="info-input" placeholder="Additional info" />
   <button id="add-info">Add Info</button>
 </div>
@@ -68,24 +72,34 @@ Promise.all([
 });
 
 
+function renderCartogram(geojson) {
+  svg.select('#states').selectAll('path')
+    .data(geojson.features, d => d.properties.id)
+    .transition().duration(750)
+    .attr('d', path);
+  geojson.features.forEach(f => currentValues[f.properties.id] = f.properties.value);
+}
+
+function requestCartogram(formData) {
+  const iterationCount = document.getElementById('iterations').value;
+  formData.append('iterations', iterationCount);
+  return fetch('/cartogram', { method: 'POST', body: formData })
+    .then(r => {
+      if (!r.ok) {
+        return r.text().then(text => { throw new Error(text || 'Error generating cartogram'); });
+      }
+      return r.json();
+    })
+    .then(renderCartogram)
+    .catch(err => alert(err.message));
+}
+
 document.getElementById('generate').addEventListener('click', () => {
   const file = document.getElementById('csv').files[0];
   if (!file) { alert('Please choose a CSV file.'); return; }
   const formData = new FormData();
   formData.append('file', file);
-  fetch('/cartogram', { method: 'POST', body: formData })
-    .then(r => {
-      if (!r.ok) throw new Error('Error generating cartogram');
-      return r.json();
-    })
-    .then(geojson => {
-      svg.select('#states').selectAll('path')
-        .data(geojson.features, d => d.properties.id)
-        .transition().duration(750)
-        .attr('d', path);
-      geojson.features.forEach(f => currentValues[f.properties.id] = f.properties.value);
-    })
-    .catch(err => alert(err));
+  requestCartogram(formData);
 });
 
 document.getElementById('preset-select').addEventListener('change', ev => {
@@ -98,16 +112,7 @@ document.getElementById('preset-select').addEventListener('change', ev => {
   const blob = new Blob([rows.join('\n')], {type: 'text/csv'});
   const formData = new FormData();
   formData.append('file', blob, 'preset.csv');
-  fetch('/cartogram', { method: 'POST', body: formData })
-    .then(r => { if(!r.ok) throw new Error('Error generating cartogram'); return r.json(); })
-    .then(geojson => {
-      svg.select('#states').selectAll('path')
-        .data(geojson.features, d => d.properties.id)
-        .transition().duration(750)
-        .attr('d', path);
-      geojson.features.forEach(f => currentValues[f.properties.id] = f.properties.value);
-    })
-    .catch(err => alert(err));
+  requestCartogram(formData);
 });
 
 function showTooltip(event, d) {
