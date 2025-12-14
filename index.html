@@ -96,10 +96,21 @@ function requestCartogram(formData) {
 
 document.getElementById('generate').addEventListener('click', () => {
   const file = document.getElementById('csv').files[0];
-  if (!file) { alert('Please choose a CSV file.'); return; }
-  const formData = new FormData();
-  formData.append('file', file);
-  requestCartogram(formData);
+  const presetKey = document.getElementById('preset-select').value;
+
+  if (file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    requestCartogram(formData);
+    return;
+  }
+
+  if (presetKey && presets[presetKey]) {
+    requestPresetCartogram(presetKey);
+    return;
+  }
+
+  alert('Please choose a CSV file or preset.');
 });
 
 async function requestPresetCartogram(key) {
