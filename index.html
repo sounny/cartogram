@@ -102,17 +102,30 @@ document.getElementById('generate').addEventListener('click', () => {
   requestCartogram(formData);
 });
 
+async function requestPresetCartogram(key) {
+  try {
+    const response = await fetch(`preset_geojson/${key}.geojson`, { cache: 'no-cache' });
+    if (!response.ok) throw new Error('Preset cartogram not found');
+    const geojson = await response.json();
+    renderCartogram(geojson);
+  } catch (err) {
+    if (location.host.endsWith('github.io')) {
+      alert('Preset rendering is unavailable because there is no cartogram server on GitHub Pages. Please download the project and run it locally.');
+      return;
+    }
+    const rows = ['id,value'];
+    Object.entries(presets[key]).forEach(([id,val]) => rows.push(id + ',' + val));
+    const blob = new Blob([rows.join('\n')], {type: 'text/csv'});
+    const formData = new FormData();
+    formData.append('file', blob, 'preset.csv');
+    requestCartogram(formData);
+  }
+}
+
 document.getElementById('preset-select').addEventListener('change', ev => {
   const key = ev.target.value;
   if (!key || !presets[key]) return;
-  const rows = ['id,value'];
-  Object.entries(presets[key]).forEach(([id,val]) => {
-    rows.push(id + ',' + val);
-  });
-  const blob = new Blob([rows.join('\n')], {type: 'text/csv'});
-  const formData = new FormData();
-  formData.append('file', blob, 'preset.csv');
-  requestCartogram(formData);
+  requestPresetCartogram(key);
 });
 
 function showTooltip(event, d) {
