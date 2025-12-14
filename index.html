@@ -53,9 +53,13 @@ Promise.all([
   stateNames = names;
   presets = presetData;
   baseStates = topojson.feature(us, us.objects.states).features;
+  baseStates.forEach(f => {
+    f.properties = f.properties || {};
+    f.properties.id = f.properties.id ?? f.id;
+  });
   const stateGroup = svg.append('g').attr('id','states')
     .selectAll('path')
-    .data(baseStates)
+    .data(baseStates, d => d.properties.id)
     .enter().append('path')
     .attr('class','state')
     .attr('d', path)
@@ -73,11 +77,23 @@ Promise.all([
 
 
 function renderCartogram(geojson) {
-  svg.select('#states').selectAll('path')
-    .data(geojson.features, d => d.properties.id)
+  const states = svg.select('#states').selectAll('path')
+    .data(geojson.features, d => d.properties?.id ?? d.id);
+
+  states.enter()
+    .append('path')
+    .attr('class','state')
+    .on('click', (event, d) => showTooltip(event, d))
+    .merge(states)
     .transition().duration(750)
     .attr('d', path);
-  geojson.features.forEach(f => currentValues[f.properties.id] = f.properties.value);
+
+  states.exit().remove();
+
+  geojson.features.forEach(f => {
+    const id = f.properties?.id ?? f.id;
+    currentValues[id] = f.properties?.value;
+  });
 }
 
 function requestCartogram(formData) {
@@ -140,8 +156,9 @@ document.getElementById('preset-select').addEventListener('change', ev => {
 });
 
 function showTooltip(event, d) {
-  const value = currentValues[d.id] ?? 'N/A';
-  const name = stateNames[d.id] || d.id;
+  const featureId = d.properties?.id ?? d.id;
+  const value = currentValues[featureId] ?? 'N/A';
+  const name = stateNames[featureId] || featureId;
   tooltip.style('left', (event.pageX + 5) + 'px')
          .style('top', (event.pageY + 5) + 'px')
          .style('display', 'block')
