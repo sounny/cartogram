@@ -19,8 +19,17 @@ def index() -> Response:
 def cartogram_route() -> Response:
     if "file" not in request.files:
         return Response("Missing CSV file", status=400)
+
+    iterations_raw = request.form.get("iterations", "5")
+    try:
+        iterations = int(iterations_raw)
+    except (TypeError, ValueError):
+        return Response("Iterations must be an integer", status=400)
+
+    if iterations < 1 or iterations > 25:
+        return Response("Iterations must be between 1 and 25", status=400)
+
     file = request.files["file"]
-    iterations = int(request.form.get("iterations", 5))
     with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
         file.save(tmp.name)
         tmp_path = tmp.name
@@ -28,9 +37,9 @@ def cartogram_route() -> Response:
         carto = generate_cartogram_df("us.json", tmp_path, iterations)
         geojson = carto.to_json()
     except Exception as exc:
-        os.remove(tmp_path)
         return Response(str(exc), status=400)
-    os.remove(tmp_path)
+    finally:
+        os.remove(tmp_path)
     return Response(geojson, content_type="application/json")
 
 

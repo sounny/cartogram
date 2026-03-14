@@ -2,15 +2,119 @@
 <meta charset="utf-8">
 <title>Cartogram Generator</title>
 <style>
-body { font-family: sans-serif; margin: 0; }
-nav { background: #333; color: #fff; padding: 0.5em; }
-nav ul { list-style: none; margin: 0; padding: 0; display: flex; }
-nav li { margin-right: 1em; }
+:root {
+  color-scheme: light;
+  --bg: #f7f8fb;
+  --panel: #ffffff;
+  --accent: #2c72d6;
+  --accent-dark: #1f56a2;
+  --border: #d9dfeb;
+  --text: #1e2635;
+  --muted: #5b6473;
+}
+body {
+  font-family: Inter, Segoe UI, Roboto, sans-serif;
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+}
+nav {
+  background: #182033;
+  color: #fff;
+  padding: 0.7rem 1rem;
+}
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 1rem;
+}
 nav a { color: #fff; text-decoration: none; }
-#controls { margin: 1em 0; }
-.land { fill: #eee; stroke: #999; }
-.state { fill: steelblue; stroke: #fff; }
-.tooltip { position: absolute; background: rgba(0,0,0,0.75); color: #fff; padding: 0.2em 0.5em; pointer-events: none; display: none; }
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+}
+#controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.8rem;
+  align-items: end;
+}
+label { font-size: 0.9rem; color: var(--muted); display: block; margin-bottom: 0.25rem; }
+input, select, button {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.95rem;
+}
+button {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+button:hover { background: var(--accent-dark); }
+button:disabled { opacity: 0.7; cursor: wait; }
+.secondary-btn {
+  background: #eef3ff;
+  color: var(--accent-dark);
+  border-color: #c8d8ff;
+}
+#status {
+  margin-top: 0.8rem;
+  min-height: 1.1rem;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+#status.error { color: #b91d1d; }
+#status.success { color: #147a35; }
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 72vh;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-top: 1rem;
+}
+.state { fill: steelblue; stroke: #fff; stroke-width: 1; cursor: pointer; }
+.state:hover { fill: #2b6fb4; }
+.tooltip {
+  position: absolute;
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+  pointer-events: none;
+  display: none;
+  font-size: 0.85rem;
+}
+#info-area {
+  margin-top: 0.7rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+#info-area div {
+  background: #edf3ff;
+  border: 1px solid #d5e3ff;
+  color: #274676;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.84rem;
+}
 </style>
 <nav>
   <ul>
@@ -19,31 +123,72 @@ nav a { color: #fff; text-decoration: none; }
     <li><a href="#" id="download-png">Download PNG</a></li>
   </ul>
 </nav>
-<div id="controls">
-  <input type="file" id="csv" accept=".csv" />
-  <select id="preset-select"></select>
-  <button id="generate">Generate Cartogram</button>
-  <label>
-    Iterations:
-    <input type="number" id="iterations" value="5" min="1" max="25" step="1" />
-  </label>
-  <input type="text" id="info-input" placeholder="Additional info" />
-  <button id="add-info">Add Info</button>
-</div>
-<svg width="960" height="600"></svg>
-<div id="tooltip" class="tooltip"></div>
-<div id="info-area"></div>
+<main>
+  <div class="panel">
+    <div id="controls">
+      <div>
+        <label for="csv">Upload CSV</label>
+        <input type="file" id="csv" accept=".csv" />
+      </div>
+      <div>
+        <label for="preset-select">Preset Dataset</label>
+        <select id="preset-select"></select>
+      </div>
+      <div>
+        <label for="iterations">Iterations</label>
+        <input type="number" id="iterations" value="5" min="1" max="25" step="1" />
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="generate">Generate Cartogram</button>
+      </div>
+      <div>
+        <label for="info-input">Add note</label>
+        <input type="text" id="info-input" placeholder="Additional info" />
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="add-info" class="secondary-btn">Add Info</button>
+      </div>
+    </div>
+    <div id="status"></div>
+  </div>
+
+  <svg viewBox="0 0 960 600" aria-label="US cartogram map"></svg>
+  <div id="tooltip" class="tooltip"></div>
+  <div id="info-area"></div>
+</main>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://unpkg.com/topojson-client@3"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/save-svg-as-png/1.4.17/saveSvgAsPng.min.js"></script>
 <script>
-const svg = d3.select("svg");
+const svg = d3.select('svg');
 const path = d3.geoPath().projection(d3.geoAlbersUsa().scale(1000).translate([480,300]));
 let baseStates;
 let stateNames = {};
 let presets = {};
 let currentValues = {};
+let isGenerating = false;
 const tooltip = d3.select('#tooltip');
+const statusEl = document.getElementById('status');
+
+function setStatus(message, type = '') {
+  statusEl.textContent = message;
+  statusEl.className = type;
+}
+
+function getIterationCount() {
+  const value = Number.parseInt(document.getElementById('iterations').value, 10);
+  if (!Number.isInteger(value) || value < 1 || value > 25) {
+    throw new Error('Iterations must be an integer between 1 and 25.');
+  }
+  return value;
+}
+
+function setGeneratingState(active) {
+  isGenerating = active;
+  document.getElementById('generate').disabled = active;
+}
 
 Promise.all([
   d3.json('us.json'),
@@ -57,7 +202,8 @@ Promise.all([
     f.properties = f.properties || {};
     f.properties.id = f.properties.id ?? f.id;
   });
-  const stateGroup = svg.append('g').attr('id','states')
+
+  svg.append('g').attr('id','states')
     .selectAll('path')
     .data(baseStates, d => d.properties.id)
     .enter().append('path')
@@ -66,15 +212,18 @@ Promise.all([
     .on('click', (event,d) => showTooltip(event,d));
 
   const select = document.getElementById('preset-select');
-  select.innerHTML = '<option value="">Preset</option>';
+  select.innerHTML = '<option value="">Choose preset</option>';
   Object.keys(presets).forEach(key => {
     const opt = document.createElement('option');
     opt.value = key;
-    opt.textContent = key.charAt(0).toUpperCase()+key.slice(1);
+    opt.textContent = key.charAt(0).toUpperCase() + key.slice(1);
     select.appendChild(opt);
   });
-});
 
+  setStatus('Ready. Upload a CSV or choose a preset dataset.');
+}).catch(() => {
+  setStatus('Could not load map assets. Please reload the page.', 'error');
+});
 
 function renderCartogram(geojson) {
   const states = svg.select('#states').selectAll('path')
@@ -96,37 +245,45 @@ function renderCartogram(geojson) {
   });
 }
 
-function requestCartogram(formData) {
-  const iterationCount = document.getElementById('iterations').value;
-  formData.append('iterations', iterationCount);
-  return fetch('/cartogram', { method: 'POST', body: formData })
-    .then(r => {
-      if (!r.ok) {
-        return r.text().then(text => { throw new Error(text || 'Error generating cartogram'); });
-      }
-      return r.json();
-    })
-    .then(renderCartogram)
-    .catch(err => alert(err.message));
+async function requestCartogram(formData) {
+  const iterationCount = getIterationCount();
+  formData.set('iterations', iterationCount);
+  const response = await fetch('/cartogram', { method: 'POST', body: formData });
+  if (!response.ok) {
+    throw new Error(await response.text() || 'Error generating cartogram');
+  }
+  return response.json();
 }
 
-document.getElementById('generate').addEventListener('click', () => {
+document.getElementById('generate').addEventListener('click', async () => {
+  if (isGenerating) return;
+
   const file = document.getElementById('csv').files[0];
   const presetKey = document.getElementById('preset-select').value;
 
-  if (file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    requestCartogram(formData);
-    return;
-  }
+  try {
+    if (!file && !(presetKey && presets[presetKey])) {
+      throw new Error('Please choose a CSV file or preset.');
+    }
 
-  if (presetKey && presets[presetKey]) {
-    requestPresetCartogram(presetKey);
-    return;
-  }
+    setGeneratingState(true);
+    setStatus('Generating cartogram...');
 
-  alert('Please choose a CSV file or preset.');
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      const geojson = await requestCartogram(formData);
+      renderCartogram(geojson);
+      setStatus(`Rendered cartogram from ${file.name}.`, 'success');
+    } else {
+      await requestPresetCartogram(presetKey);
+      setStatus(`Rendered preset: ${presetKey}.`, 'success');
+    }
+  } catch (err) {
+    setStatus(err.message, 'error');
+  } finally {
+    setGeneratingState(false);
+  }
 });
 
 async function requestPresetCartogram(key) {
@@ -137,35 +294,38 @@ async function requestPresetCartogram(key) {
     renderCartogram(geojson);
   } catch (err) {
     if (location.host.endsWith('github.io')) {
-      alert('Preset rendering is unavailable because there is no cartogram server on GitHub Pages. Please download the project and run it locally.');
-      return;
+      throw new Error('Preset rendering is unavailable on GitHub Pages. Run locally for server-generated cartograms.');
     }
     const rows = ['id,value'];
-    Object.entries(presets[key]).forEach(([id,val]) => rows.push(id + ',' + val));
+    Object.entries(presets[key]).forEach(([id, val]) => rows.push(id + ',' + val));
     const blob = new Blob([rows.join('\n')], {type: 'text/csv'});
     const formData = new FormData();
     formData.append('file', blob, 'preset.csv');
-    requestCartogram(formData);
+    const geojson = await requestCartogram(formData);
+    renderCartogram(geojson);
   }
 }
 
-document.getElementById('preset-select').addEventListener('change', ev => {
-  const key = ev.target.value;
-  if (!key || !presets[key]) return;
-  requestPresetCartogram(key);
+document.getElementById('preset-select').addEventListener('change', () => {
+  document.getElementById('csv').value = '';
+});
+
+document.getElementById('csv').addEventListener('change', () => {
+  document.getElementById('preset-select').value = '';
 });
 
 function showTooltip(event, d) {
+  event.stopPropagation();
   const featureId = d.properties?.id ?? d.id;
   const value = currentValues[featureId] ?? 'N/A';
   const name = stateNames[featureId] || featureId;
   tooltip.style('left', (event.pageX + 5) + 'px')
-         .style('top', (event.pageY + 5) + 'px')
-         .style('display', 'block')
-         .text(`${name}: ${value}`);
+    .style('top', (event.pageY + 5) + 'px')
+    .style('display', 'block')
+    .text(`${name}: ${value}`);
 }
 
-svg.on('click', () => tooltip.style('display','none'));
+svg.on('click', () => tooltip.style('display', 'none'));
 
 document.getElementById('download-png').addEventListener('click', () => {
   saveSvgAsPng(document.querySelector('svg'), 'cartogram.png');
@@ -173,11 +333,10 @@ document.getElementById('download-png').addEventListener('click', () => {
 
 document.getElementById('add-info').addEventListener('click', () => {
   const text = document.getElementById('info-input').value.trim();
-  if (text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    document.getElementById('info-area').appendChild(div);
-    document.getElementById('info-input').value = '';
-  }
+  if (!text) return;
+  const div = document.createElement('div');
+  div.textContent = text;
+  document.getElementById('info-area').appendChild(div);
+  document.getElementById('info-input').value = '';
 });
 </script>
