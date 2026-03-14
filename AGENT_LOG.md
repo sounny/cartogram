@@ -6,3 +6,5 @@ Use this file to record summaries of each task or idea for future agents.
 - Added static cartogram files for presets and updated the UI to load them (with a GitHub Pages warning), so preset selection no longer triggers server errors.
 - Allow generating cartograms directly from selected presets when no CSV is provided, improving GitHub Pages usability.
 - Fixed cartogram redraws by keying states by id and syncing tooltip lookup to GeoJSON properties.
+- Improved backend validation for cartogram iterations and ensured temporary CSV cleanup always runs.
+- Refreshed the web UI with clearer controls/status messaging and more reliable generate flow for CSV vs preset usage.
